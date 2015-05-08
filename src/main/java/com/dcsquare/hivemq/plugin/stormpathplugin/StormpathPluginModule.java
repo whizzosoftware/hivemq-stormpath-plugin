@@ -68,12 +68,12 @@ public class StormpathPluginModule extends HiveMQPluginModule {
     @Singleton
     private Application registerApplication(final Configuration configuration) {
         try {
-            final String apiKeyId = configuration.getString("stormpath.apiKey.id");
-            final String apiKeySecret = configuration.getString("stormpath.apiKey.secret");
+            final String apiKeyId = convertStringToEnvVariable(configuration.getString("stormpath.apiKey.id"));
+            final String apiKeySecret = convertStringToEnvVariable(configuration.getString("stormpath.apiKey.secret"));
 
             final DefaultApiKey apiKey = new DefaultApiKey(apiKeyId, apiKeySecret);
             final Client client = new ClientBuilder().setApiKey(apiKey).build();
-            final String applicationName = configuration.getString("stormpath.application.name");
+            final String applicationName = convertStringToEnvVariable(configuration.getString("stormpath.application.name"));
 
             final Tenant tenant = client.getCurrentTenant();
             Application application = null;
@@ -100,6 +100,21 @@ public class StormpathPluginModule extends HiveMQPluginModule {
             log.error("An error occured while authenticating with Stormpath", e);
         }
         return null;
+    }
+
+    /**
+     * Converts a String prefixed with a '$' to an environment variable value. Otherwise, returns the untouched
+     * String value.
+     *
+     * @param value the String value to convert
+     *
+     * @return the converted value
+     */
+    private String convertStringToEnvVariable(String value) {
+        if (value != null && value.charAt(0) == '$') {
+            value = System.getenv(value.substring(1));
+        }
+        return value;
     }
 
 }
